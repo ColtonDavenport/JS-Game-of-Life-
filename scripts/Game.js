@@ -82,11 +82,32 @@ class Game {
 
         return neighbourCounts;
     }
+
+    IsExtinct () {
+        for (const row of this.#board){
+            for (const cellIsAlive of row) {
+                if(cellIsAlive) return false;
+            }
+        }
+        return true;
+    }
     
 
     Evolve () {
         // create an array to store counts of each cell's neighbours
         let neighbourCounts =  this.#GetNeighbourCounts();
+
+        // update the board
+        this.#board.forEach((row, rowIndex) => {
+            row.forEach((cell, colIndex) => {
+                // if a live cell doesn't have the right number of neighbours, it dies
+                if(cell && !this.#rules.live.includes(neighbourCounts[rowIndex][colIndex])) {
+                    this.#board[rowIndex][colIndex] = false;
+                } else if(!cell && this.#rules.reproduce.includes(neighbourCounts[rowIndex][colIndex])){
+                    this.#board[rowIndex][colIndex] = true;
+                }
+            })
+        });
     }
 
     toHTML(){
