@@ -8,23 +8,93 @@
  * @since  x.x.x
  */
 
+const DEFAULT_RULES  = {
+    live: [2,3],
+    reproduce: [3]
+}
+
+
 class Game {
 
     #board
+    #boardHasChanged = false;
+    #rules = {}
 
-    #rules = {
-        live: [2,3],
-        reproduce: [3]
-    }
+    constructor(board, rules = DEFAULT_RULES){
 
-    constructor(board){
-        this.#board = board;
+        // test that the board is a 2d array of booleans 
+        this.setBoard(board)
         
+        this.setRules(rules);
+
     }
+
+    setBoard(board){
+
+        // check that the new board is a 2d array of booleans
+        try{
+            for(const row of board){
+                for(const cell of row){
+                    if (cell !== true && cell !== false){
+                        throw("Board must be a 2 dimensional array of only booleans")
+                    }
+                }
+            }
+        }
+        catch(err){
+            throw(err)
+        }
+
+        
+
+        // deep copy the new board to the board property
+
+        this.#board = [];
+    
+        for(const row of board){
+            let newRow = [];
+            for (const cell of row){
+                newRow.push(cell);    
+
+            }
+            this.#board.push(newRow);
+        }
+    }
+
+    #assignRuleValues(rulesProperty, values){
+        for(const ruleValue of values){
+            if(typeof ruleValue !== "number" && ruleValue !== Math.floor(ruleValue)){
+                throw("Rule values must be integers")
+            }
+            if(ruleValue>8){
+                console.warn("A rule value over 8 will have no affect")
+            } 
+            else if(ruleValue < 0){
+                console.warn("A negative rule value will have no effect")
+            } 
+            else {
+                rulesProperty.push(ruleValue);
+            }
+        }
+    }
+    setRules(rules){
+        if(rules === undefined){
+            throw("Rules must be defined")
+        }
+
+        if(rules.live === undefined || rules.reproduce === undefined){
+            throw ('Rules must include a "live" and a "reproduce" property')
+        }
+
+        this.#rules.live = [];
+        this.#assignRuleValues(this.#rules.live, rules.live)
+
+        this.#rules.reproduce = [];
+        this.#assignRuleValues(this.#rules.reproduce, rules.reproduce)
+    }
+
 
     /**
-     * Count Cell Neighbours
-     * 
      * Summary. Returns a count of how many live cells are adjacent to the given coordinates
      *
      * Description. Checks orthagonally and diagonally adjacent cells in the board. 
@@ -83,6 +153,17 @@ class Game {
         return neighbourCounts;
     }
 
+    /**
+     *
+     * Summary. Returns true if every cell on the board is extinct. False otherwise
+     *
+     * Description. Checks each cell, 
+     *
+     * @access     private
+     *
+     *
+     * @return {[[number]]} An array the same shape as the gameboard
+     */
     IsExtinct () {
         for (const row of this.#board){
             for (const cellIsAlive of row) {
@@ -92,10 +173,15 @@ class Game {
         return true;
     }
     
+    hasChanged() {
+        return this.#boardHasChanged;
+    }
 
     Evolve () {
         // create an array to store counts of each cell's neighbours
         let neighbourCounts =  this.#GetNeighbourCounts();
+
+        this.#boardHasChanged = false;
 
         // update the board
         this.#board.forEach((row, rowIndex) => {
@@ -103,12 +189,17 @@ class Game {
                 // if a live cell doesn't have the right number of neighbours, it dies
                 if(cell && !this.#rules.live.includes(neighbourCounts[rowIndex][colIndex])) {
                     this.#board[rowIndex][colIndex] = false;
+                    this.#boardHasChanged = true;
+
                 } else if(!cell && this.#rules.reproduce.includes(neighbourCounts[rowIndex][colIndex])){
                     this.#board[rowIndex][colIndex] = true;
+                    this.#boardHasChanged = true;
                 }
             })
         });
     }
+
+    this
 
     toHTML(){
         let string = "";
