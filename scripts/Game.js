@@ -40,9 +40,7 @@ class Game {
     
     constructor(board, rules = DEFAULT_RULES){
 
-        // test that the board is a 2d array of booleans 
         this.setBoard(board);
-        
         this.setRules(rules);
 
     }
@@ -76,8 +74,10 @@ class Game {
             throw(err)
         }
 
-        // deep copy the new board to the board property
+        // a new board counnts as a new start, so should appear as if no changes have been made
+        this.#hasChanged = false;
 
+        // deep copy the new board to the board property
         this.#board = [];
     
         for(const row of board){
@@ -233,8 +233,9 @@ class Game {
     /**
      *
      * Summary. Returns true if the table changed in the most recent evolution. 
-     *          False otherwise, including when checked before any evolutions have been made.
+     *          False otherwise.
      *
+     * Description. Returns false if the board was just set, rather than evolved
      *
      * @access     private
      *
