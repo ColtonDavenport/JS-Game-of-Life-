@@ -145,9 +145,6 @@ class Game {
 
         this.#rules.live = this.#getValidRulesValues(rules.live)
         this.#rules.reproduce = this.#getValidRulesValues(rules.reproduce)
-
-        console.log(this.#rules)
-
     }
 
 
