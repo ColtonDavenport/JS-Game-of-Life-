@@ -36,6 +36,7 @@ class Game {
 
     #board
     #rules = {}
+    #hasChanged = false
     
     constructor(board, rules = DEFAULT_RULES){
 
@@ -213,12 +214,12 @@ class Game {
      *
      * Summary. Returns true if every cell on the board is extinct. False otherwise
      *
-     * Description. Checks each cell, 
+     * Description. Checks each cell, returning false as soon as a live cell is found.
      *
      * @access     private
      *
      *
-     * @return {[[number]]} An array the same shape as the gameboard
+     * @return {Boolean} True if every cell is dead, false otherwise
      */
     IsExtinct () {
         for (const row of this.#board){
@@ -227,6 +228,20 @@ class Game {
             }
         }
         return true;
+    }
+
+    /**
+     *
+     * Summary. Returns true if the table changed in the most recent evolution. 
+     *          False otherwise, including when checked before any evolutions have been made.
+     *
+     *
+     * @access     private
+     *
+     * @return {Boolean} A boolean representing whether the board has changed
+     */
+    hasChanged () {
+        return this.#hasChanged;
     }
     
     /**
@@ -240,9 +255,13 @@ class Game {
      *
      */
     Evolve () {
+
+        // start tracking wether this evolution has changed the board
+
+        this.#hasChanged = false;
+
         // create an array to store counts of each cell's neighbours
         let neighbourCounts =  this.#GetNeighbourCounts();
-
 
         // update the board
         this.#board.forEach((row, rowIndex) => {
@@ -250,9 +269,11 @@ class Game {
                 // if a live cell doesn't have the right number of neighbours, it dies
                 if(cell && !this.#rules.live.includes(neighbourCounts[rowIndex][colIndex])) {
                     this.#board[rowIndex][colIndex] = false;
+                    this.#hasChanged = true;
 
                 } else if(!cell && this.#rules.reproduce.includes(neighbourCounts[rowIndex][colIndex])){
                     this.#board[rowIndex][colIndex] = true; 
+                    this.#hasChanged = true;
                 }
             })
         });

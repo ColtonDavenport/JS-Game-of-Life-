@@ -1,11 +1,5 @@
 /**
- * Summary. (use period)
- *
- * Description. (use period)
- *
- * @file   This files runs a game of life.
- * @author AuthorName.
- * @since  x.x.x
+ * Summary. Handles a game of Life
  */
 
 import Game from "./Game.js"
