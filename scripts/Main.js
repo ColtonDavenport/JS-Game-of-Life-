@@ -27,6 +27,25 @@ const PrintBoard = (game, boardElementID) => {
     }
 }
 
+const getRandomBoard = () => {
+    let numRows = Math.floor(Math.random() * 4 + 3)
+    let numCols = Math.floor(Math.random() * 4 + 3)
+
+    let newBoard = [];
+
+    for(let i = 0; i < numRows; i++){
+        let newRow =[];
+        for(let j = 0; j < numCols; j++){
+            let newCell = (Math.random() > 0.5);
+            newRow.push(newCell);
+        }
+        newBoard.push(newRow);
+    }
+
+    return newBoard;
+
+}
+
 /**
  * Summary. Regularly evolves a game of life and updates an html element with the state 
  *
@@ -51,7 +70,8 @@ const RunGameUntilExtinction = (game, boardElementID, timeout = 1000) => {
         if(game.hasChanged()){
             PrintBoard(game, boardElementID)
         } else {
-            clearInterval(intervalID);
+            //clearInterval(intervalID);
+            game.setBoard(getRandomBoard());
         }
     }, timeout)
 
@@ -59,14 +79,7 @@ const RunGameUntilExtinction = (game, boardElementID, timeout = 1000) => {
 
 const Main = () => {
 
-    let board = [
-        [false, false, true, true],
-        [false, false, true, false],
-        [false, true, true, false],
-        [false, false, true, false],
-    ]
-
-    let game = new Game(board);
+    let game = new Game(getRandomBoard());
 
     PrintBoard(game, "TempBoard")
     RunGameUntilExtinction(game, "TempBoard")
