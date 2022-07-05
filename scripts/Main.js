@@ -28,15 +28,17 @@ const PrintBoard = (game, boardElementID) => {
 }
 
 const getRandomBoard = () => {
-    let numRows = Math.floor(Math.random() * 4 + 3)
-    let numCols = Math.floor(Math.random() * 4 + 3)
+    const numRows = Math.floor(Math.random() * 4 + 3)
+    const maxCols = Math.floor(Math.random() * 4 + 3)
 
     let newBoard = [];
 
     for(let i = 0; i < numRows; i++){
         let newRow =[];
+        const numCols =  maxCols - (Math.floor(Math.random() * maxCols))
+
         for(let j = 0; j < numCols; j++){
-            let newCell = (Math.random() > 0.5);
+            let newCell = (Math.random() > 0.45);
             newRow.push(newCell);
         }
         newBoard.push(newRow);
