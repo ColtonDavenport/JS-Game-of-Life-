@@ -79,7 +79,10 @@ const RunGameUntilExtinction = (game, boardElementID, timeout = 1000) => {
 
 const Main = () => {
 
-    let game = new Game(getRandomBoard());
+    // let game = new Game(getRandomBoard());
+    let game = new Game([[true, true, false],
+                          [ false, false, false],
+                        [false, false, true]]);
 
     PrintBoard(game, "TempBoard")
     RunGameUntilExtinction(game, "TempBoard")

@@ -34,9 +34,10 @@ const DEFAULT_RULES  = {
 
 class Game {
 
-    #board
-    #rules = {}
-    #hasChanged = false
+    #board;
+    #neighbourCounts;
+    #rules = {};
+    #hasChanged = false;
     
     constructor(board, rules = DEFAULT_RULES){
 
@@ -78,16 +79,22 @@ class Game {
         this.#hasChanged = false;
 
         // deep copy the new board to the board property
+        // at the same time, create the neighbour counts board, but don't fill it
         this.#board = [];
-    
+        this.#neighbourCounts = [];
         for(const row of board){
-            let newRow = [];
+            let newBoardRow = [];
             for (const cell of row){
-                newRow.push(cell);    
+                newBoardRow.push(cell);    
 
             }
-            this.#board.push(newRow);
+            this.#board.push(newBoardRow);
+            this.#neighbourCounts.push(new Array(newBoardRow.length).fill(0));
         }
+
+        // set the ititial state of the Neighbour Counts
+        this.#setAllNeighbourCounts();
+        console.log(this.#neighbourCounts)
     }
 
     /**
@@ -205,6 +212,46 @@ class Game {
         })
 
         return neighbourCounts;
+    }
+
+    #updateExistingCell(rowIdx, colIdx, change) {
+        if(this.#neighbourCounts[rowIdx][colIdx] !== undefined){
+            this.#neighbourCounts[rowIdx][colIdx] += change;
+        }
+    }
+
+    #updateCountsOfNeigbhours(rowIdx, colIdx, change){
+
+        // Only check upwards if this isn't the top row
+        if(rowIdx > 0){
+            /*Up*/          this.#updateExistingCell(rowIdx-1, colIdx,   change);
+            /*Up & Left*/   this.#updateExistingCell(rowIdx-1, colIdx-1, change);
+            /*Up & Right*/  this.#updateExistingCell(rowIdx-1, colIdx+1, change);
+        }
+        
+        // Only check downwards if this isn't the bottom row
+        if(rowIdx + 1 < this.#board.length) {
+            /*Down*/         this.#updateExistingCell(rowIdx+1, colIdx,   change);
+            /*Down & Left*/  this.#updateExistingCell(rowIdx+1,colIdx-1, change);
+            /*Down & Right*/ this.#updateExistingCell(rowIdx+1,colIdx+1, change);
+
+        }
+        
+        /*left*/  if(colIdx > 0) this.#updateExistingCell(rowIdx,   colIdx-1, change);
+        /*right*/ this.#updateExistingCell(rowIdx,colIdx+1, change);
+        
+    }
+    #setAllNeighbourCounts() {
+        // run through each cell of the board. if it is living, add 1 to its neighbours
+    
+        for(let r = 0; r < this.#board.length; r++){
+            for(let c = 0; c < this.#board[r].length; c++){
+                if(this.#board[r][c]){
+                this.#updateCountsOfNeigbhours(r, c, 1);
+                }
+            }
+        }
+
     }
 
     /**
