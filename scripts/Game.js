@@ -185,28 +185,28 @@ class Game {
      *
      * @param {number}   rowIdx  The index of the cell's row in the board.
      * @param {number}   colIdx  The index of the cell's column in the board.
-     * @param {number}   change  the value that each neigbouring cell should be adjusted by.
+     * @param {number}   adjustment  the value that each neigbouring cell should be adjusted by.
      * 
      */
-    #updateCountsOfNeigbhours(rowIdx, colIdx, change){
+    #adjustCountsOfNeigbhours(rowIdx, colIdx, adjustment){
 
         // Only check upwards if this isn't the top row
         if(rowIdx > 0){
-            /*Up*/          this.#updateExistingCell(rowIdx-1, colIdx,   change);
-            /*Up & Left*/   this.#updateExistingCell(rowIdx-1, colIdx-1, change);
-            /*Up & Right*/  this.#updateExistingCell(rowIdx-1, colIdx+1, change);
+            /*Up*/          this.#updateExistingCell(rowIdx-1, colIdx,   adjustment);
+            /*Up & Left*/   this.#updateExistingCell(rowIdx-1, colIdx-1, adjustment);
+            /*Up & Right*/  this.#updateExistingCell(rowIdx-1, colIdx+1, adjustment);
         }
         
         // Only check downwards if this isn't the bottom row
         if(rowIdx + 1 < this.#board.length) {
-            /*Down*/         this.#updateExistingCell(rowIdx+1, colIdx,   change);
-            /*Down & Left*/  this.#updateExistingCell(rowIdx+1,colIdx-1, change);
-            /*Down & Right*/ this.#updateExistingCell(rowIdx+1,colIdx+1, change);
+            /*Down*/         this.#updateExistingCell(rowIdx+1, colIdx,   adjustment);
+            /*Down & Left*/  this.#updateExistingCell(rowIdx+1,colIdx-1, adjustment);
+            /*Down & Right*/ this.#updateExistingCell(rowIdx+1,colIdx+1, adjustment);
 
         }
         
-        /*left*/  if(colIdx > 0) this.#updateExistingCell(rowIdx,   colIdx-1, change);
-        /*right*/ this.#updateExistingCell(rowIdx,colIdx+1, change);
+        /*left*/  if(colIdx > 0) this.#updateExistingCell(rowIdx,   colIdx-1, adjustment);
+        /*right*/ this.#updateExistingCell(rowIdx,colIdx+1, adjustment);
         
     }
 
@@ -231,7 +231,7 @@ class Game {
         for(let r = 0; r < this.#board.length; r++){
             for(let c = 0; c < this.#board[r].length; c++){
                 if(this.#board[r][c]){
-                this.#updateCountsOfNeigbhours(r, c, 1);
+                this.#adjustCountsOfNeigbhours(r, c, 1);
                 }
             }
         }
@@ -273,16 +273,17 @@ class Game {
     }
     
     /**
-     *
-     * Summary. Advance the state of the game of life by 1 turn
-     *
-     * Description. Using the rules set for this game, the cells are updated. 
-     *              Cells will either die, reproduce, or stay the same.
-     *
-     * @access     public
-     *
+     *  Summary. Updates the board based on the neighbour counts and rules. Returns an array
+     *              of the positions that have been changed
+     * 
+     *  Description. Checks every cell against the set rules. If any cells are changed,
+     *                  will set hasChanged to true
+     * 
+     * @return {[Position]} An array of positions where the board has changed
+     * 
      */
-    Evolve () {
+
+    #UpdateBoard () {
 
         // create an array to store the position of changes
         let changeIndexes = [];
@@ -307,17 +308,45 @@ class Game {
             })
         });
 
-        // Store whether any changes have been made
+        // update whether any changes have been made
         this.#hasChanged = changeIndexes.length > 0;
 
+        return changeIndexes;
+    }
+
+     /**
+     *  Summary. Updates the neighbour counts based on an array of positions.
+     * 
+     *  Description. Checks each position that has changed. If at that position is a
+     *                  living cell, each neighbour will increment its count. Else, 
+     *                  each neighbour will decrement its count.
+     * 
+     */
+    #UpdateNeighbourCounts (changeIndexes) {
         // update the neighbour counts based on whether a cell was born or died
         for(const changePosition of changeIndexes){
             if(this.#board[changePosition.row][changePosition.column]){
-                this.#updateCountsOfNeigbhours(changePosition.row, changePosition.column, 1)
+                this.#adjustCountsOfNeigbhours(changePosition.row, changePosition.column, 1)
             }else {
-                this.#updateCountsOfNeigbhours(changePosition.row, changePosition.column, -1)
+                this.#adjustCountsOfNeigbhours(changePosition.row, changePosition.column, -1)
             }
         }
+    }
+
+
+    /**
+     *
+     * Summary. Advance the state of the game of life by 1 turn
+     *
+     * Description. Using the rules set for this game, the cells are updated. 
+     *              Cells will either die, reproduce, or stay the same.
+     *
+     * @access     public
+     *
+     */
+    Evolve () {
+        let changeIndexes = this.#UpdateBoard();
+        this.#UpdateNeighbourCounts(changeIndexes)
     }
 
     /**
