@@ -70,7 +70,7 @@ const RunGameUntilExtinction = (game, boardElementID, timeout = 1000) => {
         if(game.hasChanged()){
             PrintBoard(game, boardElementID)
         } else {
-            //clearInterval(intervalID);
+            // clearInterval(intervalID);
             game.setBoard(getRandomBoard());
         }
     }, timeout)

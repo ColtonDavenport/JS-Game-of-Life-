@@ -10,7 +10,12 @@ const DEFAULT_RULES  = {
     live: [2,3],
     reproduce: [3]
 }
-
+class Position {
+    constructor(row, column){
+        this.row = row;
+        this.column = column;
+    }
+}
 
 /**
  * Summary. Implements the Game of Life
@@ -75,13 +80,12 @@ class Game {
             throw(err)
         }
 
-        // a new board counnts as a new start, so should appear as if no changes have been made
+        // a new board counts as a new start, so should appear as if no changes have been made
         this.#hasChanged = false;
 
         // deep copy the new board to the board property
         // at the same time, create the neighbour counts board, but don't fill it
         this.#board = [];
-        this.#neighbourCounts = [];
         for(const row of board){
             let newBoardRow = [];
             for (const cell of row){
@@ -89,12 +93,10 @@ class Game {
 
             }
             this.#board.push(newBoardRow);
-            this.#neighbourCounts.push(new Array(newBoardRow.length).fill(0));
         }
 
         // set the ititial state of the Neighbour Counts
         this.#setAllNeighbourCounts();
-        console.log(this.#neighbourCounts)
     }
 
     /**
@@ -155,71 +157,37 @@ class Game {
     }
 
 
+    
     /**
-     * Summary. Returns a count of how many live cells are adjacent to the given coordinates
+     * Summary. Updates the neighbour count of a cell at the given position
      *
-     * Description. Checks orthagonally and diagonally adjacent cells in the board. 
-     *              Returns a count of how many cells are living.
+     * Description. Checks first that the position exists, then applies the adjustment
      *
      * @access     private
      *
-     *
-     * @param {number}   row  The index of the cell's row in the board.
-     * @param {number}   col  The index of the cell's column in the board.
-     *
-     * @return {number} a count of the living cells adjacent to the cell at (row, col) on the board.
+     * @param {number}   rowIdx  The index of the cell's row in the board.
+     * @param {number}   colIdx  The index of the cell's column in the board.
+     * @param {number}   change  the value that this cell should be adjusted by.
+     * 
      */
-    #CountCellNeighbours(row, col) {
-
-        let count = 0;
-
-        // Check the orthagonal neighbours
-
-        /*Up*/    if(row > 0 && this.#board[row-1][col]) count++;
-        /*Down*/  if(row + 1 < this.#board.length && this.#board[row+1][col]) count++;
-        /*left*/  if(col > 0 && this.#board[row][col - 1]) count++;
-        /*right*/ if(this.#board[row][col + 1]) count++;
-
-
-        // Check the Diagonal Neighbours
-
-        /*Up & Left*/    if(row > 0 && this.#board[row-1][col-1]) count++;
-        /*Up & Right*/   if(row > 0 && this.#board[row-1][col+1]) count++;
-        /*Down & Left*/  if(row + 1 < this.#board.length && this.#board[row+1][col-1]) count++;
-        /*Down & Right*/ if(row + 1 < this.#board.length && this.#board[row+1][col+1]) count++;
-
-        return count;
-    }
-
-    /**
-     *
-     * Summary. Returns a count of every cell's live neighbours
-     *
-     * Description. 
-     *
-     * @access     private
-     *
-     *
-     * @return {[[number]]} An array the same shape as the gameboard
-     */
-    #GetNeighbourCounts() {
-
-        // create a two dimensional array of how many neighbours each cell has
-        let neighbourCounts = this.#board.map((row, rowIndex) => {
-            return row.map((cell, colIndex) => {
-                return this.#CountCellNeighbours(rowIndex, colIndex)
-            })
-        })
-
-        return neighbourCounts;
-    }
-
     #updateExistingCell(rowIdx, colIdx, change) {
         if(this.#neighbourCounts[rowIdx][colIdx] !== undefined){
             this.#neighbourCounts[rowIdx][colIdx] += change;
         }
     }
 
+    /**
+     * Summary. Updates the counts of each cell neigbouring the given position
+     *
+     * Description. Adds "change" to every cell adjacent to (rowIdx, colIdx).
+     *
+     * @access     private
+     *
+     * @param {number}   rowIdx  The index of the cell's row in the board.
+     * @param {number}   colIdx  The index of the cell's column in the board.
+     * @param {number}   change  the value that each neigbouring cell should be adjusted by.
+     * 
+     */
     #updateCountsOfNeigbhours(rowIdx, colIdx, change){
 
         // Only check upwards if this isn't the top row
@@ -241,9 +209,25 @@ class Game {
         /*right*/ this.#updateExistingCell(rowIdx,colIdx+1, change);
         
     }
+
+    /**
+     *
+     * Summary. Refreshes the neighbour count array
+     *
+     * Description. Sets every count to zero, then increments the counts of
+     *              neighbours based on the living cells
+     *
+     * @access     private
+     *
+     */
     #setAllNeighbourCounts() {
+        // rebuild the count array based on the current board
+        this.#neighbourCounts = [];
+
+        for(const row of this.#board){
+            this.#neighbourCounts.push(new Array(row.length).fill(0));
+        }
         // run through each cell of the board. if it is living, add 1 to its neighbours
-    
         for(let r = 0; r < this.#board.length; r++){
             for(let c = 0; c < this.#board[r].length; c++){
                 if(this.#board[r][c]){
@@ -251,7 +235,6 @@ class Game {
                 }
             }
         }
-
     }
 
     /**
@@ -301,27 +284,40 @@ class Game {
      */
     Evolve () {
 
-        // start tracking wether this evolution has changed the board
-
-        this.#hasChanged = false;
-
-        // create an array to store counts of each cell's neighbours
-        let neighbourCounts =  this.#GetNeighbourCounts();
+        // create an array to store the position of changes
+        let changeIndexes = [];
 
         // update the board
         this.#board.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
-                // if a live cell doesn't have the right number of neighbours, it dies
-                if(cell && !this.#rules.live.includes(neighbourCounts[rowIndex][colIndex])) {
+                if(cell && !this.#rules.live.includes(this.#neighbourCounts[rowIndex][colIndex])) {
+                    // the current cell is alive, but doesn't have enough neigbours to survive
+                    
+                    // kill the cell and log the change
                     this.#board[rowIndex][colIndex] = false;
-                    this.#hasChanged = true;
+                    changeIndexes.push(new Position(rowIndex, colIndex));
 
-                } else if(!cell && this.#rules.reproduce.includes(neighbourCounts[rowIndex][colIndex])){
+                } else if(!cell && this.#rules.reproduce.includes(this.#neighbourCounts[rowIndex][colIndex])){
+                    // the current cell is dead, but can reproduce
+
+                    // set the cell to living and log the change
                     this.#board[rowIndex][colIndex] = true; 
-                    this.#hasChanged = true;
+                    changeIndexes.push(new Position(rowIndex, colIndex));
                 }
             })
         });
+
+        // Store whether any changes have been made
+        this.#hasChanged = changeIndexes.length > 0;
+
+        // update the neighbour counts based on whether a cell was born or died
+        for(const changePosition of changeIndexes){
+            if(this.#board[changePosition.row][changePosition.column]){
+                this.#updateCountsOfNeigbhours(changePosition.row, changePosition.column, 1)
+            }else {
+                this.#updateCountsOfNeigbhours(changePosition.row, changePosition.column, -1)
+            }
+        }
     }
 
     /**
@@ -346,6 +342,7 @@ class Game {
             //string += "\n";
             string += "<br />"
         });
+
         return string;
     }
 
